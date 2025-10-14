@@ -1,7 +1,8 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { ImagePlus, Send, Loader2, X, Sparkles, CheckCircle, Share2 } from "lucide-react";
+import { ImagePlus, Send, Loader2, X, Sparkles, CheckCircle, Share2, MessageSquare } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useConversation } from "../context/ConversationContext";
 import { postsAPI } from "../utils/api";
 
 const AiInterface = () => {
@@ -16,9 +17,32 @@ const AiInterface = () => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [refineInput, setRefineInput] = useState("");
   const fileInputRef = useRef(null);
+  const messagesEndRef = useRef(null);
   const { isAuthenticated } = useAuth();
+  const { currentConversation, addMessage, getConversationContext } = useConversation();
 
   const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+
+  // Load conversation messages when conversation changes
+  useEffect(() => {
+    if (currentConversation && currentConversation.messages.length > 0) {
+      // Get the last assistant message as the current response
+      const lastAssistantMsg = [...currentConversation.messages]
+        .reverse()
+        .find(msg => msg.role === 'assistant');
+      if (lastAssistantMsg) {
+        setResponse(lastAssistantMsg.content);
+      }
+    } else {
+      setResponse("");
+    }
+    setPosted(false);
+  }, [currentConversation]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [currentConversation?.messages]);
 
   const handleChange = (e) => {
     setInput(e.target.value);
@@ -64,45 +88,75 @@ const AiInterface = () => {
   const handleSubmit = async () => {
     if (!input.trim() && !selectedImage) return;
 
+    const userMessage = input.trim() || "[Image uploaded]";
     setLoading(true);
     setResponse("");
 
     try {
+      // Save user message to conversation
+      if (isAuthenticated) {
+        await addMessage('user', userMessage, imagePreview);
+      }
+
+      // Get conversation context for AI
+      const context = isAuthenticated ? await getConversationContext(5) : [];
+
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
-      const systemPrompt = `You are a professional social media manager AI. Your task is to create engaging, professional social media posts based on the user's input and/or images. 
+      const systemPrompt = `
+You are an expert LinkedIn content creator and professional social media copywriter. Your task is to generate a single, well-structured LinkedIn post directly ready to publish — not multiple options, not conversational suggestions.
 
-Guidelines:
-- Create posts that are attention-grabbing and professional
-- Use appropriate emojis sparingly for engagement
-- Include relevant hashtags (3-5 max)
-- Keep the tone professional yet conversational
-- Optimize for different platforms (LinkedIn, Twitter, Instagram, Facebook)
-- If an image is provided, describe what you see and incorporate it into the post
-- Suggest multiple variations if appropriate
-- Focus on value, storytelling, and engagement
+🔹 Writing Goals:
+- Create ONE engaging, professional post based on the given topic or idea.
+- Start with a strong opening hook or insight.
+- Maintain a clear structure: Hook → Insight/Story → Value/Takeaway → Call to Engagement (question or reflection).
+- Keep tone natural, confident, and professional — like a human thought leader on LinkedIn.
+- Write in first person ("I" or "we") where appropriate.
+- Include 3–5 relevant, trending hashtags at the end (no more).
+- Avoid sounding robotic, repetitive, or overly enthusiastic.
+- Do NOT ask the user which option they prefer.
+- Do NOT include phrases like “here are a few options,” “let me know which one,” or “Option 1/2/3.”
+- The output should look like a polished LinkedIn post — ready to share.
 
-Format your response with:
-1. A compelling post caption
-2. Relevant hashtags
-3. Optional: Platform-specific variations`;
+🔹 If an image is provided:
+- Assume it's related to the topic.
+- Subtly reference what the image might convey (e.g., “In this visualization…” or “This snapshot captures…”).
+- Keep post text independent and professional.
+
+🔹 Example style:
+A thought-provoking insight, short sentences, clean formatting, and line breaks for readability.
+
+Format:
+[LinkedIn Post Body]
+[Relevant Hashtags]
+`;
+
+      // Build context string from previous messages
+      let contextString = '';
+      if (context.length > 0) {
+        contextString = '\n\nPrevious conversation:\n' +
+          context.map(msg => `${msg.role}: ${msg.content}`).join('\n');
+      }
 
       let result;
 
       if (selectedImage) {
         const imagePart = await fileToGenerativePart(selectedImage);
-        const prompt = input.trim()
-          ? `${systemPrompt}\n\nUser request: ${input}`
-          : `${systemPrompt}\n\nUser request: Create a professional social media post based on this image.`;
-        
+        const prompt = `${systemPrompt}${contextString}\n\nUser request: ${input}`;
         result = await model.generateContent([prompt, imagePart]);
       } else {
-        const prompt = `${systemPrompt}\n\nUser request: ${input}`;
+        const prompt = `${systemPrompt}${contextString}\n\nUser request: ${input}`;
         result = await model.generateContent(prompt);
       }
 
       const text = result.response.text();
       setResponse(text);
+
+      // Save assistant response to conversation
+      if (isAuthenticated) {
+        await addMessage('assistant', text);
+      }
+
       setInput("");
       setHeight("32px");
       setPosted(false);
@@ -146,6 +200,11 @@ Format your response with:
     setShowConfirmDialog(false);
 
     try {
+      // Save refinement request to conversation
+      if (isAuthenticated) {
+        await addMessage('user', `Refine: ${refineInput}`);
+      }
+
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
       const prompt = `You are a professional social media manager. The user has a draft post and wants to refine it.
 
@@ -159,6 +218,12 @@ Please update the post according to the user's request while maintaining profess
       const result = await model.generateContent(prompt);
       const text = result.response.text();
       setResponse(text);
+
+      // Save refined response to conversation
+      if (isAuthenticated) {
+        await addMessage('assistant', text);
+      }
+
       setRefineInput("");
     } catch (error) {
       console.error("Error refining content:", error);
@@ -177,6 +242,44 @@ Please update the post according to the user's request while maintaining profess
 
   return (
     <div className="w-full space-y-6">
+      {/* Chat History */}
+      {isAuthenticated && currentConversation && currentConversation.messages.length > 0 && (
+        <div className="bg-zinc-800/50 backdrop-blur-sm rounded-3xl border border-zinc-700/50 shadow-2xl p-6 max-h-96 overflow-y-auto">
+          <div className="flex items-center gap-2 text-indigo-400 mb-4">
+            <MessageSquare size={20} />
+            <h3 className="font-semibold text-lg">Conversation History</h3>
+          </div>
+          <div className="space-y-4">
+            {currentConversation.messages.map((msg, index) => (
+              <div
+                key={index}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.role === 'user'
+                      ? 'bg-indigo-500/20 border border-indigo-500/50 text-white'
+                      : 'bg-zinc-700/50 border border-zinc-600/50 text-zinc-200'
+                    }`}
+                >
+                  {msg.imageUrl && (
+                    <img
+                      src={msg.imageUrl}
+                      alt="Uploaded"
+                      className="max-h-32 rounded-lg mb-2"
+                    />
+                  )}
+                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    {new Date(msg.timestamp).toLocaleTimeString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
+      )}
+
       {/* Input Section */}
       <div className="bg-zinc-800/50 backdrop-blur-sm rounded-3xl border border-zinc-700/50 shadow-2xl">
         {/* Image Preview */}
@@ -223,11 +326,10 @@ Please update the post according to the user's request while maintaining profess
             />
             <label
               htmlFor="image-upload"
-              className={`cursor-pointer p-2.5 rounded-xl transition-all ${
-                selectedImage
+              className={`cursor-pointer p-2.5 rounded-xl transition-all ${selectedImage
                   ? "bg-indigo-500 text-white"
                   : "bg-zinc-700/50 text-zinc-400 hover:bg-zinc-700 hover:text-white"
-              }`}
+                }`}
             >
               <ImagePlus size={20} />
             </label>
@@ -285,7 +387,7 @@ Please update the post according to the user's request while maintaining profess
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-zinc-800 rounded-3xl border border-zinc-700 shadow-2xl max-w-2xl w-full p-6 animate-fadeIn">
             <h3 className="text-white text-xl font-bold mb-4">Ready to post to LinkedIn?</h3>
-            
+
             <div className="bg-zinc-900/50 rounded-xl p-4 mb-6 max-h-60 overflow-y-auto">
               <p className="text-zinc-300 whitespace-pre-wrap">{response}</p>
             </div>

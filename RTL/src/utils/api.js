@@ -44,4 +44,18 @@ export const postsAPI = {
   deletePost: (postId) => api.delete(`/api/posts/${postId}`),
 };
 
+// Conversations API
+export const conversationsAPI = {
+  getAll: () => api.get('/api/conversations'),
+  getById: (conversationId) => api.get(`/api/conversations/${conversationId}`),
+  create: (title) => api.post('/api/conversations', { title }),
+  addMessage: (conversationId, role, content, imageUrl = null) => 
+    api.post(`/api/conversations/${conversationId}/messages`, { role, content, imageUrl }),
+  updateTitle: (conversationId, title) => 
+    api.patch(`/api/conversations/${conversationId}`, { title }),
+  delete: (conversationId) => api.delete(`/api/conversations/${conversationId}`),
+  getContext: (conversationId, limit = 10) => 
+    api.get(`/api/conversations/${conversationId}/context?limit=${limit}`),
+};
+
 export default api;

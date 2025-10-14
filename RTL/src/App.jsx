@@ -1,15 +1,26 @@
-import React from "react";
+import React, { useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
-import AiInterface from "./components/AiInterface";
+import { useConversation } from "./context/ConversationContext";
+import ChatInterface from "./components/ChatInterface";
 import LoginButton from "./components/LoginButton";
 import UserProfile from "./components/UserProfile";
+import ConversationSidebar from "./components/ConversationSidebar";
 import AuthSuccess from "./pages/AuthSuccess";
 import AuthFailure from "./pages/AuthFailure";
-import { Loader2 } from "lucide-react";
+import { Loader2, Menu } from "lucide-react";
 
 function HomePage() {
   const { isAuthenticated, loading } = useAuth();
+  const { 
+    conversations, 
+    currentConversation, 
+    startNewChat,
+    selectConversation,
+    deleteConversation,
+    updateConversationTitle 
+  } = useConversation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (loading) {
     return (
@@ -21,38 +32,45 @@ function HomePage() {
   }
 
   return (
-    <div className="bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 w-full min-h-screen flex flex-col items-center text-center px-6 py-12">
-      
-      <div className="flex flex-col items-center w-full max-w-4xl">
-        {/* User Profile or Login */}
-        <div className="w-full flex justify-end mb-6 animate-fadeIn">
-          {isAuthenticated ? <UserProfile /> : <LoginButton />}
+    <div className="bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 w-full h-screen flex overflow-hidden">
+      {/* Conversation Sidebar - Only show when authenticated */}
+      {isAuthenticated && (
+        <ConversationSidebar
+          conversations={conversations}
+          currentConversationId={currentConversation?._id}
+          onSelectConversation={selectConversation}
+          onNewConversation={startNewChat}
+          onDeleteConversation={deleteConversation}
+          onUpdateTitle={updateConversationTitle}
+          isOpen={sidebarOpen}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
+        />
+      )}
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col h-screen">
+        {/* Header */}
+        <div className="border-b border-zinc-700/50 bg-zinc-900/50 backdrop-blur-sm px-6 py-4">
+          <div className="flex justify-between items-center">
+            {isAuthenticated && (
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="lg:hidden p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-all"
+              >
+                <Menu size={24} />
+              </button>
+            )}
+            <div className={`${isAuthenticated ? 'ml-auto' : 'w-full flex justify-end'}`}>
+              {isAuthenticated ? <UserProfile /> : <LoginButton />}
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-col justify-center items-center space-y-4 animate-fadeIn">
-          <h1 className="text-white text-5xl md:text-6xl font-bold tracking-tight">
-            Welcome to <span className="text-indigo-400">RTL</span>
-          </h1>
-          <p className="text-zinc-300 text-lg md:text-xl font-light max-w-2xl">
-            Your intelligent social media manager — create professional posts with AI and images.
-          </p>
-          {!isAuthenticated && (
-            <p className="text-yellow-400 text-sm mt-2">
-              👆 Login with LinkedIn to post directly to your profile
-            </p>
-          )}
-        </div>
-
-        <div className="mt-10 w-32 h-[2px] bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full animate-fadeIn delay-200" /> 
-
-        <div className="mt-12 w-full px-4 animate-fadeIn delay-300">
-          <AiInterface />
+        {/* Chat Interface */}
+        <div className="flex-1 overflow-hidden">
+          <ChatInterface />
         </div>
       </div>
-
-      <footer className="mt-12 text-zinc-500 text-sm font-mono animate-fadeIn delay-500">
-        © {new Date().getFullYear()} RTL — Built with 💜 React & Tailwind
-      </footer>
     </div>
   );
 }

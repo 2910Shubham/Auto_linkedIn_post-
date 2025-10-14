@@ -10,6 +10,7 @@ import connectDB from './config/database.js';
 import passport from './config/passport.js';
 import authRoutes from './routes/auth.js';
 import postsRoutes from './routes/posts.js';
+import conversationsRoutes from './routes/conversations.js';
 import User from './models/User.js';
 
 // Initialize Express app
@@ -56,12 +57,14 @@ app.get('/', (req, res) => {
     endpoints: {
       auth: '/auth',
       posts: '/api/posts',
+      conversations: '/api/conversations',
     },
   });
 });
 
 app.use('/auth', authRoutes);
 app.use('/api/posts', postsRoutes);
+app.use('/api/conversations', conversationsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
