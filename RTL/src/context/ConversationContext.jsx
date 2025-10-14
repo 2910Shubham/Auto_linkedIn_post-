@@ -17,6 +17,10 @@ export const ConversationProvider = ({ children }) => {
   const [conversations, setConversations] = useState([]);
   const [currentConversation, setCurrentConversation] = useState(null);
   const [loading, setLoading] = useState(false);
+  
+  // Local messages buffer - stores messages before saving to DB
+  const [localMessagesBuffer, setLocalMessagesBuffer] = useState([]);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Load conversations when user is authenticated
   useEffect(() => {
@@ -25,13 +29,17 @@ export const ConversationProvider = ({ children }) => {
     } else {
       setConversations([]);
       setCurrentConversation(null);
+      setLocalMessagesBuffer([]);
+      setHasUnsavedChanges(false);
     }
   }, [isAuthenticated]);
 
   const loadConversations = async () => {
     try {
       setLoading(true);
+      console.log('Loading conversations...');
       const response = await conversationsAPI.getAll();
+      console.log('Conversations loaded:', response.data.length, 'conversations');
       setConversations(response.data);
       
       // Don't auto-select a conversation - let user start fresh or choose from sidebar
@@ -39,6 +47,8 @@ export const ConversationProvider = ({ children }) => {
       setCurrentConversation(null);
     } catch (error) {
       console.error('Error loading conversations:', error);
+      console.error('Error details:', error.response?.data);
+      console.error('Error status:', error.response?.status);
     } finally {
       setLoading(false);
     }
@@ -51,77 +61,114 @@ export const ConversationProvider = ({ children }) => {
     }
     
     try {
+      console.log('Creating conversation with title:', title);
       const response = await conversationsAPI.create(title);
+      console.log('Conversation created successfully:', response.data);
       const newConv = response.data;
       setConversations([newConv, ...conversations]);
       setCurrentConversation(newConv);
       return newConv;
     } catch (error) {
       console.error('Error creating conversation:', error);
+      console.error('Error details:', error.response?.data);
+      console.error('Error status:', error.response?.status);
       throw error;
     }
   };
 
-  const startNewChat = () => {
+  const saveCurrentConversation = async () => {
+    if (!isAuthenticated || !hasUnsavedChanges || localMessagesBuffer.length === 0) {
+      console.log('Nothing to save');
+      return null;
+    }
+
+    try {
+      console.log('Saving current conversation with', localMessagesBuffer.length, 'messages');
+      
+      // Generate title from first user message
+      const firstUserMessage = localMessagesBuffer.find(msg => msg.role === 'user');
+      const title = firstUserMessage 
+        ? firstUserMessage.content.substring(0, 50) + (firstUserMessage.content.length > 50 ? '...' : '')
+        : 'New Chat';
+
+      // Create conversation with all messages
+      const response = await conversationsAPI.create(title);
+      const newConv = response.data;
+      console.log('Conversation created:', newConv._id);
+
+      // Add all messages to the conversation
+      for (const msg of localMessagesBuffer) {
+        await conversationsAPI.addMessage(newConv._id, msg.role, msg.content, msg.imageUrl);
+      }
+
+      // Reload to get updated conversation with all messages
+      const updatedConv = await conversationsAPI.getById(newConv._id);
+      
+      // Add to conversations list
+      setConversations([updatedConv.data, ...conversations]);
+      
+      // Clear buffer
+      setLocalMessagesBuffer([]);
+      setHasUnsavedChanges(false);
+      
+      console.log('Conversation saved successfully');
+      return updatedConv.data;
+    } catch (error) {
+      console.error('Error saving conversation:', error);
+      console.error('Error details:', error.response?.data);
+      return null;
+    }
+  };
+
+  const startNewChat = async () => {
+    // Save current conversation before starting new one
+    if (hasUnsavedChanges) {
+      console.log('Saving current conversation before starting new chat...');
+      await saveCurrentConversation();
+    }
+    
     // Clear current conversation to show welcome screen
-    // New conversation will be created when user sends first message
     setCurrentConversation(null);
+    setLocalMessagesBuffer([]);
+    setHasUnsavedChanges(false);
   };
 
   const selectConversation = async (conversationId) => {
     try {
+      // Save current conversation before switching
+      if (hasUnsavedChanges) {
+        console.log('Saving current conversation before switching...');
+        await saveCurrentConversation();
+      }
+      
+      // Load selected conversation
       const response = await conversationsAPI.getById(conversationId);
       setCurrentConversation(response.data);
+      
+      // Clear buffer since we're loading saved conversation
+      setLocalMessagesBuffer([]);
+      setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Error selecting conversation:', error);
     }
   };
 
-  const addMessage = async (role, content, imageUrl = null) => {
-    if (!isAuthenticated) {
-      console.log('User not authenticated, skipping message save');
-      return null;
-    }
+  const addMessage = (role, content, imageUrl = null) => {
+    console.log('Adding message to buffer:', { role, content: content.substring(0, 50), hasImage: !!imageUrl });
 
-    if (!currentConversation) {
-      // Create a new conversation if none exists
-      try {
-        console.log('No current conversation, creating new one...');
-        const newConv = await createConversation('New Chat');
-        if (!newConv) {
-          console.error('Failed to create conversation');
-          return null;
-        }
-        console.log('New conversation created:', newConv._id);
-        const response = await conversationsAPI.addMessage(newConv._id, role, content, imageUrl);
-        setCurrentConversation(response.data);
-        await loadConversations();
-        return response.data;
-      } catch (error) {
-        console.error('Error creating conversation and adding message:', error);
-        return null;
-      }
-    }
+    const newMessage = {
+      role,
+      content,
+      imageUrl,
+      timestamp: new Date(),
+    };
 
-    try {
-      const response = await conversationsAPI.addMessage(
-        currentConversation._id,
-        role,
-        content,
-        imageUrl
-      );
-      setCurrentConversation(response.data);
-      
-      // Update the conversation in the list
-      setConversations(conversations.map(conv => 
-        conv._id === response.data._id ? response.data : conv
-      ));
-      
-      return response.data;
-    } catch (error) {
-      console.error('Error adding message:', error);
-      return null;
-    }
+    // Add to local buffer
+    setLocalMessagesBuffer(prev => [...prev, newMessage]);
+    setHasUnsavedChanges(true);
+    
+    console.log('Message added to buffer. Total messages:', localMessagesBuffer.length + 1);
+    return newMessage;
   };
 
   const updateConversationTitle = async (conversationId, title) => {
@@ -153,16 +200,18 @@ export const ConversationProvider = ({ children }) => {
     }
   };
 
-  const getConversationContext = async (limit = 10) => {
-    if (!currentConversation) return [];
-    
-    try {
-      const response = await conversationsAPI.getContext(currentConversation._id, limit);
-      return response.data.context;
-    } catch (error) {
-      console.error('Error getting context:', error);
-      return [];
+  const getCurrentMessages = () => {
+    // If viewing a saved conversation, return its messages
+    if (currentConversation && !hasUnsavedChanges) {
+      return currentConversation.messages || [];
     }
+    // Otherwise return buffer
+    return localMessagesBuffer;
+  };
+
+  const getConversationContext = (limit = 10) => {
+    const messages = getCurrentMessages();
+    return messages.slice(-limit);
   };
 
   const value = {
@@ -176,7 +225,11 @@ export const ConversationProvider = ({ children }) => {
     updateConversationTitle,
     deleteConversation,
     getConversationContext,
+    getCurrentMessages,
+    saveCurrentConversation,
     loadConversations,
+    hasUnsavedChanges,
+    localMessagesBuffer,
   };
 
   return (

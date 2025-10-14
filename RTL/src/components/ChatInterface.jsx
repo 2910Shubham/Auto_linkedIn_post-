@@ -26,13 +26,20 @@ const ChatInterface = () => {
   const textareaRef = useRef(null);
   
   const { isAuthenticated, user } = useAuth();
-  const { currentConversation, addMessage, getConversationContext, createConversation } = useConversation();
+  const { 
+    currentConversation, 
+    addMessage, 
+    getConversationContext, 
+    getCurrentMessages,
+    loadConversations,
+    hasUnsavedChanges 
+  } = useConversation();
 
   const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
-  // Get messages from either conversation or local state
-  const messages = isAuthenticated && currentConversation 
-    ? currentConversation.messages 
+  // Get messages from context (handles both buffer and saved conversations)
+  const messages = isAuthenticated 
+    ? getCurrentMessages() 
     : localMessages;
 
   // Clear local messages when conversation changes (for authenticated users)
@@ -143,7 +150,7 @@ const ChatInterface = () => {
     setLoading(true);
 
     try {
-      // Add user message to local state first
+      // Add user message
       const userMsg = {
         role: 'user',
         content: userMessage,
@@ -151,17 +158,17 @@ const ChatInterface = () => {
         timestamp: new Date()
       };
 
-      if (isAuthenticated && currentConversation) {
-        // Save to database if authenticated
-        await addMessage('user', userMessage, imagePreview);
+      if (isAuthenticated) {
+        // Add to buffer (will be saved when user clicks New Chat or switches conversation)
+        addMessage('user', userMessage, imagePreview);
       } else {
         // Save to local state if not authenticated
         setLocalMessages(prev => [...prev, userMsg]);
       }
 
       // Get conversation context for AI
-      const context = (isAuthenticated && currentConversation) 
-        ? await getConversationContext(5) 
+      const context = isAuthenticated 
+        ? getConversationContext(5) 
         : localMessages.slice(-5); // Use last 5 local messages as context
       
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
@@ -238,9 +245,9 @@ OUTPUT FORMAT:
         timestamp: new Date()
       };
 
-      if (isAuthenticated && currentConversation) {
-        // Save to database if authenticated
-        await addMessage('assistant', text);
+      if (isAuthenticated) {
+        // Add to buffer
+        addMessage('assistant', text);
       } else {
         // Save to local state if not authenticated
         setLocalMessages(prev => [...prev, aiMsg]);
@@ -257,8 +264,8 @@ OUTPUT FORMAT:
         timestamp: new Date()
       };
       
-      if (isAuthenticated && currentConversation) {
-        await addMessage('assistant', errorMsg.content);
+      if (isAuthenticated) {
+        addMessage('assistant', errorMsg.content);
       } else {
         setLocalMessages(prev => [...prev, errorMsg]);
       }
@@ -294,7 +301,6 @@ OUTPUT FORMAT:
     if (!selectedPostForPublish || !isAuthenticated) return;
 
     setPosting(true);
-    setShowConfirmDialog(false);
     
     try {
       // Extract clean post content and upload with image if available
@@ -317,11 +323,14 @@ OUTPUT FORMAT:
         timestamp: new Date()
       };
       
-      if (isAuthenticated && currentConversation) {
-        await addMessage('assistant', successMsg.content);
+      if (isAuthenticated) {
+        addMessage('assistant', successMsg.content);
       } else {
         setLocalMessages(prev => [...prev, successMsg]);
       }
+      
+      // Close dialog after successful post
+      setShowConfirmDialog(false);
     } catch (error) {
       console.error("Error posting to LinkedIn:", error);
       
@@ -331,11 +340,14 @@ OUTPUT FORMAT:
         timestamp: new Date()
       };
       
-      if (isAuthenticated && currentConversation) {
-        await addMessage('assistant', errorMsg.content);
+      if (isAuthenticated) {
+        addMessage('assistant', errorMsg.content);
       } else {
         setLocalMessages(prev => [...prev, errorMsg]);
       }
+      
+      // Close dialog even on error
+      setShowConfirmDialog(false);
     } finally {
       setPosting(false);
       setSelectedPostForPublish(null);
@@ -359,8 +371,8 @@ OUTPUT FORMAT:
         timestamp: new Date()
       };
       
-      if (isAuthenticated && currentConversation) {
-        await addMessage('user', refineInput);
+      if (isAuthenticated) {
+        addMessage('user', refineInput);
       } else {
         setLocalMessages(prev => [...prev, userMsg]);
       }
@@ -396,8 +408,8 @@ Provide ONLY the refined post content - no meta-commentary, no options, just the
         timestamp: new Date()
       };
       
-      if (isAuthenticated && currentConversation) {
-        await addMessage('assistant', text);
+      if (isAuthenticated) {
+        addMessage('assistant', text);
       } else {
         setLocalMessages(prev => [...prev, aiMsg]);
       }
@@ -591,7 +603,16 @@ Provide ONLY the refined post content - no meta-commentary, no options, just the
       {/* Confirmation Dialog */}
       {showConfirmDialog && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-zinc-800 rounded-3xl border border-zinc-700 shadow-2xl max-w-2xl w-full p-6">
+          <div className="bg-zinc-800 rounded-3xl border border-zinc-700 shadow-2xl max-w-2xl w-full p-6 relative">
+            {/* Posting Overlay */}
+            {posting && (
+              <div className="absolute inset-0 bg-zinc-900/90 backdrop-blur-sm rounded-3xl flex flex-col items-center justify-center z-10">
+                <Loader2 size={48} className="text-indigo-400 animate-spin mb-4" />
+                <p className="text-white text-lg font-semibold">Posting to LinkedIn...</p>
+                <p className="text-zinc-400 text-sm mt-2">Please wait, this may take a few seconds</p>
+              </div>
+            )}
+            
             <h3 className="text-white text-xl font-bold mb-4">Ready to post to LinkedIn?</h3>
             
             {/* Image Preview and Upload */}
@@ -674,12 +695,12 @@ Provide ONLY the refined post content - no meta-commentary, no options, just the
               <button
                 onClick={handleConfirmPost}
                 disabled={posting}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 text-white px-6 py-3 rounded-xl font-semibold transition-all disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-700 disabled:opacity-70 text-white px-6 py-3 rounded-xl font-semibold transition-all disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {posting ? (
                   <>
                     <Loader2 size={18} className="animate-spin" />
-                    Posting...
+                    <span>Posting to LinkedIn...</span>
                   </>
                 ) : (
                   <>
