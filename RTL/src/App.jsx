@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { useConversation } from "./context/ConversationContext";
-import { SettingsProvider } from "./context/SettingsContext";
+import { SettingsProvider } from "./context/SettingsContext.jsx";
 import ChatInterface from "./components/ChatInterface";
 import LoginButton from "./components/LoginButton";
 import ConversationSidebar from "./components/ConversationSidebar";
