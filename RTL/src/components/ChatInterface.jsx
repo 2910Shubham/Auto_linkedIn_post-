@@ -448,13 +448,13 @@ Provide ONLY the refined post content - no meta-commentary, no options, just the
       {!hasMessages && (
         <div className="flex-1 flex flex-col items-center justify-center text-center px-6 pb-32">
           <div className="animate-fadeIn space-y-6">
-            <div className="w-16 h-16 bg-indigo-500/20 rounded-2xl flex items-center justify-center mx-auto">
-              <Sparkles size={32} className="text-indigo-400" />
+            <div className={`w-16 h-16 ${isLight ? 'bg-indigo-100' : 'bg-indigo-500/20'} rounded-2xl flex items-center justify-center mx-auto`}>
+              <Sparkles size={32} className={isLight ? 'text-indigo-600' : 'text-indigo-400'} />
             </div>
-            <h1 className="text-white text-4xl md:text-5xl font-bold">
-              Welcome to <span className="text-indigo-400">RTL</span>
+            <h1 className={`${isLight ? 'text-zinc-900' : 'text-white'} text-4xl md:text-5xl font-bold`}>
+              Welcome to <span className={isLight ? 'text-indigo-600' : 'text-indigo-400'}>RTL</span>
             </h1>
-            <p className="text-zinc-400 text-lg max-w-2xl">
+            <p className={`${isLight ? 'text-zinc-600' : 'text-zinc-400'} text-lg max-w-2xl`}>
               Your AI-powered social media manager. Create professional LinkedIn posts with context-aware conversations.
             </p>
             {!isAuthenticated && (
