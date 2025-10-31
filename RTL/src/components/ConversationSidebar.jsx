@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Plus, Trash2, Edit2, Check, X } from 'lucide-react';
+import { MessageSquare, Plus, Trash2, Edit2, Check, X, Settings as SettingsIcon } from 'lucide-react';
 import { conversationsAPI } from '../utils/api';
 import UserProfile from './UserProfile';
+import Settings from './Settings';
 
 const ConversationSidebar = ({ 
   conversations, 
@@ -15,6 +16,7 @@ const ConversationSidebar = ({
 }) => {
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
 
   const handleStartEdit = (conv) => {
     setEditingId(conv._id);
@@ -174,15 +176,27 @@ const ConversationSidebar = ({
           )}
         </div>
 
-        {/* Footer with user profile */}
+        {/* Footer with user profile and settings */}
         <div className="mt-auto border-t border-zinc-700/50">
           <div className="p-2">
             <UserProfile variant="sidebar" />
           </div>
-          <div className="px-4 py-2 text-xs text-zinc-500 text-center border-t border-zinc-700/50">
-            {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
+          <div className="flex items-center justify-between px-4 py-2 border-t border-zinc-700/50">
+            <span className="text-xs text-zinc-500">
+              {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
+            </span>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-all"
+              title="Settings"
+            >
+              <SettingsIcon size={16} />
+            </button>
           </div>
         </div>
+
+        {/* Settings Modal */}
+        {showSettings && <Settings onClose={() => setShowSettings(false)} />}
       </div>
     </>
   );
