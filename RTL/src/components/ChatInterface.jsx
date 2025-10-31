@@ -4,6 +4,7 @@ import { ImagePlus, Send, Loader2, X, Share2, Sparkles, User as UserIcon } from 
 import { useAuth } from "../context/AuthContext";
 import { useConversation } from "../context/ConversationContext";
 import { postsAPI } from "../utils/api";
+import PromptSuggestions from "./PromptSuggestions";
 
 const ChatInterface = () => {
   const [input, setInput] = useState("");
@@ -541,6 +542,11 @@ Provide ONLY the refined post content - no meta-commentary, no options, just the
       {/* Input Area - Fixed at bottom */}
       <div className="border-t border-zinc-700/50 bg-zinc-900/50 backdrop-blur-sm p-4">
         <div className="max-w-4xl mx-auto">
+          {/* Prompt Suggestions - Only show when no messages */}
+          {!hasMessages && (
+            <PromptSuggestions onSelect={(prompt) => setInput(prompt)} />
+          )}
+          
           {/* Image Preview */}
           {imagePreview && (
             <div className="mb-3">
