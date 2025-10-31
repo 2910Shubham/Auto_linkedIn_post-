@@ -174,16 +174,13 @@ const ConversationSidebar = ({
           )}
         </div>
 
-        {/* Footer - show profile on the left and conversation count on the right */}
-        <div className="p-4 border-t border-zinc-700/50">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center">
-              {/* UserProfile will return null when no user; safe to render here */}
-              <UserProfile />
-            </div>
-            <div className="text-xs text-zinc-500 text-right">
-              {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
-            </div>
+        {/* Footer with user profile */}
+        <div className="mt-auto border-t border-zinc-700/50">
+          <div className="p-2">
+            <UserProfile variant="sidebar" />
+          </div>
+          <div className="px-4 py-2 text-xs text-zinc-500 text-center border-t border-zinc-700/50">
+            {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
           </div>
         </div>
       </div>
