@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { useConversation } from "./context/ConversationContext";
+import { SettingsProvider } from "./context/SettingsContext";
 import ChatInterface from "./components/ChatInterface";
 import LoginButton from "./components/LoginButton";
 import ConversationSidebar from "./components/ConversationSidebar";
@@ -78,11 +79,13 @@ function HomePage() {
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/auth/success" element={<AuthSuccess />} />
-      <Route path="/auth/failure" element={<AuthFailure />} />
-    </Routes>
+    <SettingsProvider>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/auth/success" element={<AuthSuccess />} />
+        <Route path="/auth/failure" element={<AuthFailure />} />
+      </Routes>
+    </SettingsProvider>
   );
 }
 
