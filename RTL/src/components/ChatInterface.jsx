@@ -40,6 +40,13 @@ const ChatInterface = () => {
   const { settings } = useSettings();
   const isLight = settings?.theme === 'light';
 
+  const lengthMap = {
+    short: 'Keep total length 80-120 words',
+    medium: 'Keep total length 150-250 words',
+    long: 'Keep total length 300-450 words',
+  };
+  const getLengthInstruction = () => lengthMap[settings?.responseLength] || lengthMap.medium;
+
   // Get messages from context (handles both buffer and saved conversations)
   const messages = isAuthenticated 
     ? getCurrentMessages() 
@@ -176,7 +183,7 @@ const ChatInterface = () => {
       
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
-      const systemPrompt = `You are an expert LinkedIn content strategist and professional copywriter.
+  const systemPrompt = `You are an expert LinkedIn content strategist and professional copywriter.
 
 🎯 YOUR TASK:
 Generate ONE polished, publish-ready LinkedIn post. Do NOT provide multiple options or ask questions.
@@ -199,7 +206,7 @@ Generate ONE polished, publish-ready LinkedIn post. Do NOT provide multiple opti
 🎨 FORMAT:
 - Use line breaks for readability
 - Add 3-5 relevant hashtags at the end
-- Keep total length 150-250 words
+- ${getLengthInstruction()}
 
 📸 IF IMAGE PROVIDED:
 - Reference it naturally (e.g., "In this visualization..." or "This diagram shows...")
@@ -382,7 +389,7 @@ OUTPUT FORMAT:
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
       
       // Include image context if available
-      let prompt = `You are refining a LinkedIn post based on user feedback.
+  let prompt = `You are refining a LinkedIn post based on user feedback.
 
 Current post:
 ${selectedPostForPublish}
@@ -391,7 +398,7 @@ User feedback: ${refineInput}
 
 ${selectedImageForPost ? 'Note: This post includes an image. Keep your refinement relevant to the visual context.' : ''}
 
-Provide ONLY the refined post content - no meta-commentary, no options, just the improved post ready to publish.`;
+Provide ONLY the refined post content - no meta-commentary, no options, just the improved post ready to publish. ${getLengthInstruction()}`;
 
       let result;
       if (selectedImageForPost) {
