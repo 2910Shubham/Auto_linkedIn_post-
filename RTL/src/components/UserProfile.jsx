@@ -9,26 +9,70 @@ const LogoutConfirmModal = ({ isOpen, onClose, onConfirm, isLight }) => {
   
   const modalContent = (
     <div 
-      className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999]" 
-      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+      className={`fixed inset-0 z-[99999] flex items-center justify-center p-4 transition-all duration-200
+        ${isOpen ? 'opacity-100 backdrop-blur-md' : 'opacity-0 backdrop-blur-none'}`}
+      style={{ 
+        position: 'fixed', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0,
+        background: isLight 
+          ? 'linear-gradient(rgba(249, 250, 251, 0.7), rgba(249, 250, 251, 0.8))' 
+          : 'linear-gradient(rgba(24, 24, 27, 0.7), rgba(24, 24, 27, 0.8))'
+      }}
       onClick={onClose}
     >
       <div 
-        className={`${isLight ? 'bg-white' : 'bg-zinc-900'} rounded-2xl border ${isLight ? 'border-zinc-200' : 'border-zinc-700'} max-w-sm w-full mx-4 p-6 shadow-2xl`}
+        className={`transform transition-all duration-300 ease-out
+          ${isOpen ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-4 opacity-0 scale-95'}
+          ${isLight ? 'bg-white/60' : 'bg-zinc-900/60'} 
+          backdrop-blur-sm
+          rounded-2xl border ${isLight ? 'border-zinc-200' : 'border-zinc-700/50'} 
+          max-w-sm w-full mx-4 shadow-2xl
+          ${isLight ? 'shadow-indigo-500/10' : 'shadow-indigo-500/5'}`}
         onClick={e => e.stopPropagation()}
       >
-        <h3 className={`text-lg font-semibold ${isLight ? 'text-zinc-900' : 'text-white'} mb-2`}>Confirm logout</h3>
-        <p className={`text-sm ${isLight ? 'text-zinc-600' : 'text-zinc-300'} mb-4`}>Are you sure you want to log out?</p>
-        <div className="flex gap-3">
+        {/* Glass effect header */}
+        <div className={`p-6 rounded-t-2xl ${isLight ? 'bg-gradient-to-b from-gray-50/80 to-white/50' : 'bg-gradient-to-b from-zinc-800/30 to-zinc-900/30'}`}>
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-full 
+              ${isLight 
+                ? 'bg-indigo-50 ring-1 ring-indigo-100' 
+                : 'bg-indigo-500/10 ring-1 ring-indigo-500/20'}`}
+            >
+              <LogOut size={20} className={`${isLight ? 'text-indigo-600' : 'text-indigo-400'}`} />
+            </div>
+            <div>
+              <h3 className={`text-lg font-semibold ${isLight ? 'text-zinc-900' : 'text-white'}`}>
+                Ready to leave?
+              </h3>
+              <p className={`text-sm ${isLight ? 'text-zinc-600' : 'text-zinc-400'}`}>
+                Your session will be ended
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="p-4 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 px-4 py-2 rounded-lg transition-colors"
+            className={`flex-1 px-4 py-2.5 rounded-xl font-medium transition-all duration-200
+              ${isLight 
+                ? 'bg-white ring-1 ring-zinc-200 hover:ring-zinc-300 text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50' 
+                : 'bg-zinc-800 ring-1 ring-zinc-700 hover:ring-zinc-600 text-zinc-300 hover:text-white hover:bg-zinc-700'}`}
           >
-            Cancel
+            Stay logged in
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+            className={`flex-1 px-4 py-2.5 rounded-xl font-medium transition-all duration-200
+              ${isLight 
+                ? 'bg-indigo-600 hover:bg-indigo-700 text-white ring-1 ring-indigo-600' 
+                : 'bg-indigo-500 hover:bg-indigo-400 text-white ring-1 ring-indigo-500/50'}
+              transform hover:scale-[1.02] active:scale-[0.98]
+              ${isLight ? 'shadow-sm shadow-indigo-200' : 'shadow-sm shadow-indigo-950'}`}
           >
             Logout
           </button>
