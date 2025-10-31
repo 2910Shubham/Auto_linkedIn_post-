@@ -452,4 +452,42 @@ const getConversationContext = (limit = 10) => {
 9. Check sidebar: Conversation appears!
 ```
 
+
+# 🧾 Logout Confirmation Dialog
+
+This feature adds a **Logout Confirmation Dialog** to the application, ensuring users don’t accidentally log out and providing a smoother, theme-consistent experience.
+
+---
+
+## 🚀 Overview
+
+The **Logout Confirmation Dialog** appears when a user clicks the “Logout” button.  
+It prompts the user to confirm their action, helping prevent unintended logouts.
+
+### ✨ Key Highlights
+- **Confirmation prompt** before logout  
+- **Consistent theme styling** with site colors, typography, and shadows  
+- **Responsive layout** for all screen sizes  
+- **Smooth animation transitions**  
+- **Accessible controls** using keyboard and focus management
+
+---
+
+## 🧩 Implementation Details
+
+### **Core Components**
+- `LogoutDialog.jsx` – Handles dialog structure, logic, and UI.  
+- `useDialogState()` – Manages open/close state using React hooks.  
+- `LogoutButton.jsx` – Triggers the dialog on click.
+
+### **Logic Flow**
+```mermaid
+graph TD;
+A[User clicks Logout] --> B[Dialog Opens];
+B --> C[User Confirms Logout];
+B --> D[User Cancels];
+C --> E[Performs logout action];
+D --> F[Dialog closes, no action];
+
+
 **Everything now works with the buffer system! 🎉**
