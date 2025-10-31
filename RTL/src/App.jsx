@@ -7,7 +7,7 @@ import LoginButton from "./components/LoginButton";
 import ConversationSidebar from "./components/ConversationSidebar";
 import AuthSuccess from "./pages/AuthSuccess";
 import AuthFailure from "./pages/AuthFailure";
-import { Loader2, Menu } from "lucide-react";
+import { Loader2, Menu, LogIn } from "lucide-react";
 
 function HomePage() {
   const { isAuthenticated, loading } = useAuth();
@@ -56,9 +56,15 @@ function HomePage() {
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-all"
-                title="Toggle conversations"
+                title={sidebarOpen ? 'Close conversations' : 'Open conversations'}
+                aria-expanded={sidebarOpen}
+                aria-label={sidebarOpen ? 'Close conversations' : 'Open conversations'}
               >
-                <Menu size={24} />
+                {sidebarOpen ? (
+                  <LogIn size={24} style={{ transform: 'scaleX(-1)' }} />
+                ) : (
+                  <Menu size={24} />
+                )}
               </button>
             )}
             <div className={`${isAuthenticated ? '' : 'w-full flex justify-end'}`}>
