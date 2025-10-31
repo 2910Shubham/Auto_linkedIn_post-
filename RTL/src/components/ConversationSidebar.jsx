@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { MessageSquare, Plus, Trash2, Edit2, Check, LogIn} from 'lucide-react';
 import { MessageSquare, Plus, Trash2, Edit2, Check, X, Settings as SettingsIcon } from 'lucide-react';
 import { conversationsAPI } from '../utils/api';
 import UserProfile from './UserProfile';
