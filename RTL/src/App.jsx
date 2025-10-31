@@ -19,7 +19,8 @@ function HomePage() {
     deleteConversation,
     updateConversationTitle 
   } = useConversation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Default to open but allow toggling on all screen sizes
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   if (loading) {
     return (
@@ -47,14 +48,15 @@ function HomePage() {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-screen">
+  <div className={`flex-1 flex flex-col h-screen transition-all ${isAuthenticated && sidebarOpen ? 'lg:ml-80' : 'lg:ml-0'}`}>
         {/* Header */}
         <div className="border-b border-zinc-700/50 bg-zinc-900/50 backdrop-blur-sm px-6 py-4">
           <div className="flex justify-between items-center">
             {isAuthenticated && (
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-all"
+                className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-all"
+                title="Toggle conversations"
               >
                 <Menu size={24} />
               </button>

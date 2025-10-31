@@ -60,10 +60,10 @@ const ConversationSidebar = ({
 
       {/* Sidebar */}
       <div className={`
-        fixed lg:relative inset-y-0 left-0 z-50
+        fixed inset-y-0 left-0 z-50
         w-80 bg-zinc-900/95 backdrop-blur-sm border-r border-zinc-700/50
         transform transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         flex flex-col
       `}>
         {/* Header */}
