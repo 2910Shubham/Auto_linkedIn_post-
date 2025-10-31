@@ -4,7 +4,6 @@ import { useAuth } from "./context/AuthContext";
 import { useConversation } from "./context/ConversationContext";
 import ChatInterface from "./components/ChatInterface";
 import LoginButton from "./components/LoginButton";
-import UserProfile from "./components/UserProfile";
 import ConversationSidebar from "./components/ConversationSidebar";
 import AuthSuccess from "./pages/AuthSuccess";
 import AuthFailure from "./pages/AuthFailure";
@@ -62,8 +61,8 @@ function HomePage() {
                 <Menu size={24} />
               </button>
             )}
-            <div className={`${isAuthenticated ? 'ml-auto' : 'w-full flex justify-end'}`}>
-              {isAuthenticated ? <UserProfile /> : <LoginButton />}
+            <div className={`${isAuthenticated ? '' : 'w-full flex justify-end'}`}>
+              {isAuthenticated ? null : <LoginButton />}
             </div>
           </div>
         </div>

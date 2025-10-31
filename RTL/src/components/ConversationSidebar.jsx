@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, Plus, Trash2, Edit2, Check, X } from 'lucide-react';
 import { conversationsAPI } from '../utils/api';
+import UserProfile from './UserProfile';
 
 const ConversationSidebar = ({ 
   conversations, 
@@ -173,10 +174,16 @@ const ConversationSidebar = ({
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer - show profile on the left and conversation count on the right */}
         <div className="p-4 border-t border-zinc-700/50">
-          <div className="text-xs text-zinc-500 text-center">
-            {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center">
+              {/* UserProfile will return null when no user; safe to render here */}
+              <UserProfile />
+            </div>
+            <div className="text-xs text-zinc-500 text-right">
+              {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
+            </div>
           </div>
         </div>
       </div>
