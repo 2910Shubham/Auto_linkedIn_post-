@@ -307,5 +307,33 @@ Your chat interface now:
 - ✅ Looks professional and clean
 - ✅ No console errors
 - ✅ Smooth user experience
+- 
+
+
+## 🧾 Logout Confirmation Dialog
+
+This update introduces a confirmation dialog box that appears when a user clicks the **Logout** button.  
+The dialog ensures users do not accidentally log out and provides a visually appealing experience consistent with the site’s theme.
+
+### ✨ Features
+- Confirmation popup with **"Logout"** and **"Cancel"** options  
+- Styled to match the site’s color scheme, typography, and layout  
+- Smooth transition animations for better user experience  
+- Fully responsive and accessible across all devices  
+
+### 🛠️ Technical Details
+- Built using React and the existing UI components  
+- Utilizes modular CSS/Tailwind classes for theme consistency  
+- Added state management for opening and closing the dialog  
+- Optimized for performance and minimal re-rendering  
+
+### 📸 Preview
+_Add a screenshot or GIF of the dialog here if available._
+
+---
+
+**Commit Reference:**  
+`style(dialog): added themed logout confirmation dialog`
+
 
 **Ready to create amazing LinkedIn posts! 🚀**
