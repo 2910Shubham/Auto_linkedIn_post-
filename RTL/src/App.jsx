@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { useConversation } from "./context/ConversationContext";
-import { SettingsProvider } from "./context/SettingsContext";
+import { SettingsProvider } from "./context/SettingsProvider";
+import { useSettings } from "./hooks/useSettings";
 import ChatInterface from "./components/ChatInterface";
 import LoginButton from "./components/LoginButton";
 import ConversationSidebar from "./components/ConversationSidebar";
@@ -22,6 +23,8 @@ function HomePage() {
   } = useConversation();
   // Default to open but allow toggling on all screen sizes
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { settings } = useSettings();
+  const isLight = settings?.theme === 'light';
 
   if (loading) {
     return (
@@ -33,7 +36,7 @@ function HomePage() {
   }
 
   return (
-    <div className="bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 w-full h-screen flex overflow-hidden">
+    <div className={`${isLight ? 'bg-gradient-to-br from-gray-100 via-gray-50 to-white text-zinc-900' : 'bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white'} w-full h-screen flex overflow-hidden`}>
       {/* Conversation Sidebar - Only show when authenticated */}
       {isAuthenticated && (
         <ConversationSidebar
@@ -51,7 +54,7 @@ function HomePage() {
       {/* Main Content */}
   <div className={`flex-1 flex flex-col h-screen transition-all ${isAuthenticated && sidebarOpen ? 'lg:ml-80' : 'lg:ml-0'}`}>
         {/* Header */}
-        <div className="border-b border-zinc-700/50 bg-zinc-900/50 backdrop-blur-sm px-6 py-4">
+  <div className={`${isLight ? 'border-b border-zinc-200 bg-white/60' : 'border-b border-zinc-700/50 bg-zinc-900/50'} backdrop-blur-sm px-6 py-4`}>
           <div className="flex justify-between items-center">
             {isAuthenticated && (
               <button

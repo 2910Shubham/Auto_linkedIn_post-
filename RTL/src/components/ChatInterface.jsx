@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useConversation } from "../context/ConversationContext";
 import { postsAPI } from "../utils/api";
 import PromptSuggestions from "./PromptSuggestions";
+import { useSettings } from '../hooks/useSettings';
 
 const ChatInterface = () => {
   const [input, setInput] = useState("");
@@ -31,12 +32,13 @@ const ChatInterface = () => {
     currentConversation, 
     addMessage, 
     getConversationContext, 
-    getCurrentMessages,
-    loadConversations,
-    hasUnsavedChanges 
+    getCurrentMessages
   } = useConversation();
 
   const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+
+  const { settings } = useSettings();
+  const isLight = settings?.theme === 'light';
 
   // Get messages from context (handles both buffer and saved conversations)
   const messages = isAuthenticated 
@@ -48,7 +50,7 @@ const ChatInterface = () => {
     if (isAuthenticated && currentConversation) {
       setLocalMessages([]);
     }
-  }, [currentConversation?._id, isAuthenticated]);
+  }, [currentConversation, isAuthenticated]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -307,13 +309,12 @@ OUTPUT FORMAT:
       // Extract clean post content and upload with image if available
       const cleanContent = extractPostContent(selectedPostForPublish);
       
-      // Upload image if available
-      let imageUrl = null;
+      // Upload image if available (image upload implementation can be added here)
       if (selectedImageForPost) {
         const formData = new FormData();
         formData.append('image', selectedImageForPost);
         // You'll need to implement image upload endpoint
-        // For now, we'll pass the image file
+        // For now, we'll pass the image file directly to postsAPI.createPost
       }
       
       await postsAPI.createPost(cleanContent, selectedImageForPost);
@@ -460,15 +461,15 @@ Provide ONLY the refined post content - no meta-commentary, no options, just the
 
       {/* Chat Messages */}
       {hasMessages && (
-        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
           {messages.map((msg, index) => (
             <div
               key={index}
               className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {msg.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
-                  <Sparkles size={16} className="text-indigo-400" />
+                <div className={`w-8 h-8 rounded-full ${isLight ? 'bg-indigo-100/70' : 'bg-indigo-500/20'} flex items-center justify-center flex-shrink-0`}>
+                  <Sparkles size={16} className={isLight ? 'text-indigo-600' : 'text-indigo-400'} />
                 </div>
               )}
               
@@ -477,7 +478,7 @@ Provide ONLY the refined post content - no meta-commentary, no options, just the
                   className={`rounded-2xl px-4 py-3 ${
                     msg.role === 'user'
                       ? 'bg-indigo-500 text-white'
-                      : 'bg-zinc-800/80 text-zinc-100 border border-zinc-700/50'
+                      : (isLight ? 'bg-gray-100 text-zinc-900 border border-zinc-200' : 'bg-zinc-800/80 text-zinc-100 border border-zinc-700/50')
                   }`}
                 >
                   {msg.imageUrl && (
@@ -504,17 +505,17 @@ Provide ONLY the refined post content - no meta-commentary, no options, just the
                   </button>
                 )}
                 
-                <span className="text-xs text-zinc-500 mt-1">
+                <span className={`text-xs ${isLight ? 'text-zinc-600' : 'text-zinc-500'} mt-1`}>
                   {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
 
               {msg.role === 'user' && user && (
-                <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <div className={`w-8 h-8 rounded-full ${isLight ? 'bg-zinc-200' : 'bg-zinc-700'} flex items-center justify-center flex-shrink-0 overflow-hidden`}>
                   {user.profilePicture ? (
                     <img src={user.profilePicture} alt={user.firstName} className="w-full h-full object-cover" />
                   ) : (
-                    <UserIcon size={16} className="text-zinc-400" />
+                    <UserIcon size={16} className={isLight ? 'text-zinc-600' : 'text-zinc-400'} />
                   )}
                 </div>
               )}
@@ -523,11 +524,11 @@ Provide ONLY the refined post content - no meta-commentary, no options, just the
           
           {loading && (
             <div className="flex gap-3 justify-start">
-              <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
-                <Sparkles size={16} className="text-indigo-400" />
+              <div className={`w-8 h-8 rounded-full ${isLight ? 'bg-indigo-100/70' : 'bg-indigo-500/20'} flex items-center justify-center flex-shrink-0`}>
+                <Sparkles size={16} className={isLight ? 'text-indigo-600' : 'text-indigo-400'} />
               </div>
-              <div className="bg-zinc-800/80 border border-zinc-700/50 rounded-2xl px-4 py-3">
-                <div className="flex items-center gap-2 text-zinc-400">
+              <div className={`${isLight ? 'bg-white border border-zinc-200' : 'bg-zinc-800/80 border border-zinc-700/50'} rounded-2xl px-4 py-3`}>
+                <div className={`flex items-center gap-2 ${isLight ? 'text-zinc-600' : 'text-zinc-400'}`}>
                   <Loader2 size={16} className="animate-spin" />
                   <span className="text-sm">Thinking...</span>
                 </div>
@@ -540,7 +541,7 @@ Provide ONLY the refined post content - no meta-commentary, no options, just the
       )}
 
       {/* Input Area - Fixed at bottom */}
-      <div className="border-t border-zinc-700/50 bg-zinc-900/50 backdrop-blur-sm p-4">
+      <div className={`${isLight ? 'border-t border-zinc-200 bg-white/60' : 'border-t border-zinc-700/50 bg-zinc-900/50'} backdrop-blur-sm p-4`}>
         <div className="max-w-4xl mx-auto">
           {/* Prompt Suggestions - Only show when no messages */}
           {!hasMessages && (
@@ -554,7 +555,7 @@ Provide ONLY the refined post content - no meta-commentary, no options, just the
                 <img
                   src={imagePreview}
                   alt="Preview"
-                  className="max-h-32 rounded-xl border-2 border-indigo-500/30"
+                  className={`max-h-32 rounded-xl ${isLight ? 'border border-zinc-200' : 'border-2 border-indigo-500/30'}`}
                 />
                 <button
                   onClick={removeImage}
@@ -586,7 +587,7 @@ Provide ONLY the refined post content - no meta-commentary, no options, just the
 
             <textarea
               ref={textareaRef}
-              className="flex-1 bg-zinc-800 text-white rounded-xl px-4 py-3 outline-none resize-none max-h-32 placeholder:text-zinc-500"
+              className={`flex-1 ${isLight ? 'bg-white text-zinc-900 border border-zinc-200' : 'bg-zinc-800 text-white'} rounded-xl px-4 py-3 outline-none resize-none max-h-32 placeholder:${isLight ? 'text-zinc-400' : 'text-zinc-500'}`}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
