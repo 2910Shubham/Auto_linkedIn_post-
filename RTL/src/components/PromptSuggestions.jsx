@@ -1,5 +1,6 @@
 import React from 'react';
 import { Lightbulb } from 'lucide-react';
+import { useSettings } from '../hooks/useSettings';
 
 const SUGGESTED_PROMPTS = [
   {
@@ -29,11 +30,13 @@ const SUGGESTED_PROMPTS = [
 ];
 
 const PromptSuggestions = ({ onSelect }) => {
+  const { settings } = useSettings();
+  const isLight = settings?.theme === 'light';
   return (
     <div className="mb-4 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-2 mb-3 text-zinc-400">
+        <div className={`flex items-center gap-2 mb-3 ${isLight ? 'text-zinc-600' : 'text-zinc-400'}`}>
           <Lightbulb size={16} className="text-yellow-500" />
           <span className="text-sm">Suggested prompts to get you started:</span>
         </div>
@@ -44,9 +47,9 @@ const PromptSuggestions = ({ onSelect }) => {
             <button
               key={index}
               onClick={() => onSelect(prompt.text)}
-              className="text-left bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700/50 rounded-xl p-3 transition-all group"
+              className={`text-left rounded-xl p-3 transition-all group ${isLight ? 'bg-white/60 border border-zinc-200 hover:bg-gray-100' : 'bg-zinc-800/50 border border-zinc-700/50 hover:bg-zinc-800'}`}
             >
-              <span className="text-sm text-zinc-300 group-hover:text-white transition-colors line-clamp-2">
+              <span className={`text-sm ${isLight ? 'text-zinc-900 group-hover:text-zinc-900' : 'text-zinc-300 group-hover:text-white'} transition-colors line-clamp-2`}>
                 {prompt.text}
               </span>
               <span className="text-xs text-indigo-400 mt-1 block">

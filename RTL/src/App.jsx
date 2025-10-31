@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { useConversation } from "./context/ConversationContext";
-import { SettingsProvider } from "./context/SettingsContext.jsx";
+import { SettingsProvider } from "./context/SettingsProvider";
+import { useSettings } from "./hooks/useSettings";
 import ChatInterface from "./components/ChatInterface";
 import LoginButton from "./components/LoginButton";
 import ConversationSidebar from "./components/ConversationSidebar";
@@ -12,29 +13,46 @@ import { Loader2, Menu, LogIn } from "lucide-react";
 
 function HomePage() {
   const { isAuthenticated, loading } = useAuth();
-  const { 
-    conversations, 
-    currentConversation, 
+  const {
+    conversations,
+    currentConversation,
     startNewChat,
     selectConversation,
     deleteConversation,
-    updateConversationTitle 
+    updateConversationTitle,
   } = useConversation();
-  // Default to open but allow toggling on all screen sizes
+
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const { settings } = useSettings();
+  const isLight = settings?.theme === "light";
+
+  useEffect(() => {
+    const map = { small: "14px", normal: "16px", large: "18px" };
+    const size = map[settings?.fontSize] || map.normal;
+    try {
+      document.documentElement.style.fontSize = size;
+      window.__RT_SETTINGS = settings;
+    } catch {
+      // ignore
+    }
+  }, [settings]);
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 w-full min-h-screen flex flex-col justify-center items-center">
+      <div
+        className={`${isLight ? "bg-gradient-to-br from-gray-100 via-gray-50 to-white text-zinc-900" : "bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white"} w-full min-h-screen flex flex-col justify-center items-center`}
+      >
         <Loader2 size={48} className="text-indigo-400 animate-spin mb-4" />
-        <p className="text-zinc-400">Loading...</p>
+        <p className={`${isLight ? "text-zinc-700" : "text-zinc-400"}`}>Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 w-full h-screen flex overflow-hidden">
-      {/* Conversation Sidebar - Only show when authenticated */}
+    <div
+      className={`${isLight ? "bg-gradient-to-br from-gray-100 via-gray-50 to-white text-zinc-900" : "bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white"} w-full h-screen flex overflow-hidden`}
+    >
       {isAuthenticated && (
         <ConversationSidebar
           conversations={conversations}
@@ -48,33 +66,27 @@ function HomePage() {
         />
       )}
 
-      {/* Main Content */}
-  <div className={`flex-1 flex flex-col h-screen transition-all ${isAuthenticated && sidebarOpen ? 'lg:ml-80' : 'lg:ml-0'}`}>
-        {/* Header */}
-        <div className="border-b border-zinc-700/50 bg-zinc-900/50 backdrop-blur-sm px-6 py-4">
+      <div className={`flex-1 flex flex-col h-screen transition-all ${isAuthenticated && sidebarOpen ? "lg:ml-80" : "lg:ml-0"}`}>
+        <div className={`${isLight ? "border-b border-zinc-200 bg-white/60" : "border-b border-zinc-700/50 bg-zinc-900/50"} backdrop-blur-sm px-6 py-4`}>
           <div className="flex justify-between items-center">
             {isAuthenticated && (
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-all"
-                title={sidebarOpen ? 'Close conversations' : 'Open conversations'}
+                title={sidebarOpen ? "Close conversations" : "Open conversations"}
                 aria-expanded={sidebarOpen}
-                aria-label={sidebarOpen ? 'Close conversations' : 'Open conversations'}
+                aria-label={sidebarOpen ? "Close conversations" : "Open conversations"}
               >
-                {sidebarOpen ? (
-                  <LogIn size={24} style={{ transform: 'scaleX(-1)' }} />
-                ) : (
-                  <Menu size={24} />
-                )}
+                {sidebarOpen ? <LogIn size={24} style={{ transform: "scaleX(-1)" }} /> : <Menu size={24} />}
               </button>
             )}
-            <div className={`${isAuthenticated ? '' : 'w-full flex justify-end'}`}>
+
+            <div className={`${isAuthenticated ? "" : "w-full flex justify-end"}`}>
               {isAuthenticated ? null : <LoginButton />}
             </div>
           </div>
         </div>
 
-        {/* Chat Interface */}
         <div className="flex-1 overflow-hidden">
           <ChatInterface />
         </div>
